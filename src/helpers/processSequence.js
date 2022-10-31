@@ -14,38 +14,62 @@
  * Иногда промисы от API будут приходить в состояние rejected, (прямо как и API в реальной жизни)
  * Ответ будет приходить в поле {result}
  */
- import Api from '../tools/api';
+import * as R from "ramda"
+import Api from '../tools/api';
 
- const api = new Api();
 
- /**
-  * Я – пример, удали меня
-  */
- const wait = time => new Promise(resolve => {
-     setTimeout(resolve, time);
- })
+const api = new Api();
 
- const processSequence = ({value, writeLog, handleSuccess, handleError}) => {
-     /**
-      * Я – пример, удали меня
-      */
-     writeLog(value);
+// getters
+const getLength = R.length
+const getNumber = str => Number(str)
+const formatDataForFetch = (value) => ({ from: 10, to: 2, number: value })
+const getInteger = Math.round
+const getResult = R.prop(['result'])
+const getPow2 = R.partialRight(Math.pow, [2])
+const getMod3 = val => val % 3
+const fetchBinary = api.get('https://api.tech/numbers/base')
+const fetchAnimal = async (id) => await api.get(`https://animals.tech/${id}`, {})
 
-     api.get('https://api.tech/numbers/base', {from: 2, to: 10, number: '01011010101'}).then(({result}) => {
-         writeLog(result);
-     });
+// predicates
+const isLengthLessThan10 = R.pipe(getLength, R.gt(10))
+const isLengthGreaterThan2 = R.pipe(getLength, R.lt(2))
+const isValueGreaterThan0 = R.pipe(getNumber, R.lt(0))
+const isValidValue = R.allPass([isLengthLessThan10, isLengthGreaterThan2, isValueGreaterThan0])
+const isNotValidValue = R.complement(isValidValue)
 
-     wait(2500).then(() => {
-         writeLog('SecondLog')
+const processSequence = ({ value, writeLog, handleSuccess, handleError }) => {
+    R.compose(
+        R.cond([
+            [isValidValue, R.compose(
+                R.andThen(
+                    R.compose(
+                        R.andThen(
+                            R.compose(
+                                handleSuccess,
+                                getResult
+                            )
+                        ),
+                        fetchAnimal,
+                        R.tap(writeLog),
+                        getMod3,
+                        R.tap(writeLog),
+                        getPow2,
+                        R.tap(writeLog),
+                        getLength,
+                        R.tap(writeLog),
+                        getResult
+                    )
+                ),
+                fetchBinary,
+                formatDataForFetch,
+                R.tap(writeLog),
+                getInteger,
+            )],
+            [isNotValidValue, handleError],
+        ]),
+        R.tap(writeLog),
+    )(value)
+}
 
-         return wait(1500);
-     }).then(() => {
-         writeLog('ThirdLog');
-
-         return wait(400);
-     }).then(() => {
-         handleSuccess('Done');
-     });
- }
-
- export default processSequence;
+export default processSequence;
