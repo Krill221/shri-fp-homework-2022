@@ -30,6 +30,7 @@ const getPow2 = R.partialRight(Math.pow, [2])
 const getMod3 = val => val % 3
 const fetchBinary = api.get('https://api.tech/numbers/base')
 const fetchAnimal = async (id) => await api.get(`https://animals.tech/${id}`, {})
+const logError = handler => handler.bind('', 'ValidationError')
 
 // predicates
 const isLengthLessThan10 = R.pipe(getLength, R.gt(10))
@@ -39,6 +40,8 @@ const isValidValue = R.allPass([isLengthLessThan10, isLengthGreaterThan2, isValu
 const isNotValidValue = R.complement(isValidValue)
 
 const processSequence = ({ value, writeLog, handleSuccess, handleError }) => {
+
+
     R.compose(
         R.cond([
             [isValidValue, R.compose(
@@ -66,7 +69,7 @@ const processSequence = ({ value, writeLog, handleSuccess, handleError }) => {
                 R.tap(writeLog),
                 getInteger,
             )],
-            [isNotValidValue, handleError],
+            [isNotValidValue, logError(handleError)],
         ]),
         R.tap(writeLog),
     )(value)
