@@ -30,7 +30,7 @@ const getPow2 = R.partialRight(Math.pow, [2])
 const getMod3 = val => val % 3
 const fetchBinary = api.get('https://api.tech/numbers/base')
 const fetchAnimal = async (id) => await api.get(`https://animals.tech/${id}`, {})
-const logError = handler => handler.bind('', 'ValidationError')
+const logError = handler =>  R.partial(handler, ['ValidationError'])
 
 // predicates
 const isLengthLessThan10 = R.pipe(getLength, R.gt(10))
@@ -50,8 +50,8 @@ const processSequence = ({ value, writeLog, handleSuccess, handleError }) => {
                         R.andThen(
                             R.compose(
                                 handleSuccess,
-                                getResult
-                            )
+                            getResult
+                        )
                         ),
                         fetchAnimal,
                         R.tap(writeLog),
